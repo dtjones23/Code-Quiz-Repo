@@ -54,7 +54,120 @@ const quizQuestions = [
     },
 ];
 
-// Start Quiz / Timer
-// Get Questions
-// Question submit
-// End Quiz / Highscore
+let timer;
+let currentQuestionIndex = 0;
+let score = 0;
+
+// Quiz timer
+function startTimer() {
+    timer = 30;
+    const timerEl = document.getElementById('time');
+    timerEl.textContent = timer;
+
+    const timerInterval = setInterval(function () {
+        timer--;
+        timerEl.textContent = timer;
+        if (timer <= 0) {
+            clearInterval(timerInterval);
+            endQuiz();
+        }
+    }, 1000);
+}
+
+// Start quiz
+function startQuiz() {
+    document.getElementById('start-screen').classList.add('hide');
+    document.getElementById('questions').classList.remove('hide');
+    startTimer();
+    getQuestions();
+}
+
+// Get questions
+function getQuestions() {
+    const currentQuestion = quizQuestions[currentQuestionIndex];
+    const questionTitle = document.getElementById('question-title');
+    const optionsContainer = document.getElementById('options');
+
+    questionTitle.textContent = currentQuestion.question;
+
+    // Clear previous options
+    optionsContainer.innerHTML = '';
+
+    // Insert options
+    currentQuestion.answer.forEach((option) => {
+        const optionButton = document.createElement('button');
+        optionButton.textContent = option.text;
+
+        // Add event listener for option click
+        optionButton.addEventListener('click', () => {
+            handleAnswer(option.isCorrect);
+        });
+
+        optionsContainer.appendChild(optionButton);
+    });
+}
+
+// Handle answer 
+function handleAnswer(isCorrect) {
+    if (isCorrect) {
+        score++;
+        document.getElementById('feedback').textContent = "Correct!";
+    } else {
+        timer -= 5; // Penalty for wrong answer
+        document.getElementById('feedback').textContent = "Wrong!";
+    }
+
+    // Display the feedback for a short period and then clear it
+    setTimeout(() => {
+        document.getElementById('feedback').textContent = "";
+    }, 1000);
+
+    currentQuestionIndex++;
+
+    if (currentQuestionIndex < quizQuestions.length) {
+        getQuestions();
+    } else {
+        endQuiz();
+    }
+}
+
+function endQuiz() {
+    clearInterval(timer);
+    document.getElementById('questions').classList.add('hide');
+    const endScreen = document.getElementById('end-screen');
+    endScreen.classList.remove('hide');
+  
+    const finalScoreElement = document.getElementById('final-score');
+    finalScoreElement.textContent = `Your final score is ${score}.`;
+  
+    // Display highscores on the end screen
+    displayHighscores();
+  }
+
+function submitScore() {
+    const initialsInput = document.getElementById('initials');
+    const initials = initialsInput.value.trim();
+
+    if (initials !== '') {
+        const highscore = {
+            initials: initials,
+            score: score
+        };
+
+        // Retrieve existing highscores from local storage
+        const existingHighscores = JSON.parse(localStorage.getItem('highscores')) || [];
+
+        // Add the new highscore to the list
+        existingHighscores.push(highscore);
+
+        // Save the updated highscores back to local storage
+        localStorage.setItem('highscores', JSON.stringify(existingHighscores));
+
+        // Redirect to the start page
+        window.location.href = 'index.html';
+    }
+}
+
+// Save score
+document.getElementById('start').addEventListener('click', startQuiz);
+document.getElementById('submit').addEventListener('click', submitScore);
